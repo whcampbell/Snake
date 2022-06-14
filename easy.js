@@ -16,7 +16,6 @@ let score = 100;
 let easy = document.getElementById("easyButton");
 let medium = document.getElementById("medButton");
 let hard = document.getElementById("hardButton");
-let brutal = document.getElementById("brutalButton");
 // at 20 px, there are 21 blocks to the height and 35 blocks to the width
 
 // starter
@@ -28,7 +27,6 @@ easy.onclick = function startEasy() {
     easy.style.display = "none";
     medium.style.display = "none";
     hard.style.display = "none";
-    brutal.style.display = "none";
     constructBoxes();
     context.clearRect(0, 0, canvas.width, canvas.height);
     playing = true;
@@ -343,5 +341,4 @@ function cleanup() {
     easy.style.display = "inline";
     medium.style.display = "inline";
     hard.style.display = "inline";
-    brutal.style.display = "inline";
 }
