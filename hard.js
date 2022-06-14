@@ -28,7 +28,6 @@ hard.onclick = function startHard() {
     easy.style.display = "none";
     medium.style.display = "none";
     hard.style.display = "none";
-    brutal.style.display = "none";
     constructBoxesHard();
     context.clearRect(0, 0, canvas.width, canvas.height);
     playing = true;
@@ -362,5 +361,4 @@ function cleanupHard() {
     easy.style.display = "inline";
     medium.style.display = "inline";
     hard.style.display = "inline";
-    brutal.style.display = "inline";
 }
