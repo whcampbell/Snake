@@ -7,6 +7,8 @@
     </style>
 
     <body>
+        <p>Use WASD to move. It's snake, you know how to play.</p> <br>
+        
         <canvas id="canvas" width="700px" height="420px"></canvas>
         <br>
 
