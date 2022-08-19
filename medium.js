@@ -1,5 +1,6 @@
 // This is medium mode. Completely normal snake. 
 
+// explanation of below constants in "easy.js" file
 
 // let canvas = document.getElementById("canvas");
 // let context = canvas.getContext("2d");
@@ -19,15 +20,19 @@
 // let brutal = document.getElementById("brutalButton");
 // at 20 px, there are 21 blocks to the height and 35 blocks to the width
 
-// starter
+// starter - click listener for medium mode
 medium.onclick = function startMedium() {
     if (playing){
         return;
     }
     tickLength = 120;
+    
+    // hide buttons during game
     easy.style.display = "none";
     medium.style.display = "none";
     hard.style.display = "none";
+    
+    // initialize game
     constructBoxesMed();
     context.clearRect(0, 0, canvas.width, canvas.height);
     playing = true;
@@ -40,11 +45,19 @@ medium.onclick = function startMedium() {
 // vitals
 
 function loopMed(){
+    
+    // only update game (snake position, etc) after a certain length of time
+    // dictated by the current tick length (tick length reduces after eating)
     let now = performance.now();
     if (now - then > tickLength){
         then = now;
         updateMed();
     }
+    
+    // A lot of these exist to kill functions that may still be looping/running
+    // after the game ends. Keeps functions from throwing errors when they
+    // try to edit data that no longer exists (don't have to worry about error
+    // handling if your code never throws errors, am I right? heh, hmmm....)
     if (!playing) {
         return;
     }
@@ -52,12 +65,17 @@ function loopMed(){
 }
 
 function updateMed(){
+    // reset direction lock (explanation in listening method)
     dirChosen = false;
+    
+     // check if the snake is colliding with anything, then move it
     collisionCheckMed();
     moveMed();
     if (!playing) {
         return;
     }
+    
+    // clear canvas and repaint
     context.clearRect(0, 0, canvas.width, canvas.height)
     placeAppleMed();
     drawAllMed();
@@ -68,19 +86,28 @@ function updateMed(){
 window.addEventListener("keypress", listening);
 
 function listeningMed(e) {
-    --score;
+    --score; // score decreases for every turn, disincentivizes excessive turns
     console.log("banana");
+    
+    // locking the direction after first (valid) input makes input seem more
+    // responsive. If a u-turn is too quick, the second move (currently
+    // invalid) would otherwise overwrite the first and also just not happen. This
+    // results in the game "eating" both inputs. Locking on that first
+    // valid input prevents this. The second input does get eaten, but
+    // the snake can't even turn that way yet. 
     if (!playing || dirChosen) {
         return;
     }
+    
+    // switch to read directional input
     switch (e.key){
         case "a" :
-            if (direction % 2 == 0){
+            if (direction % 2 == 0){ // invalid if straight or backwards
                 break;
             } else {
                 direction = 2;
             }
-            dirChosen = true;
+            dirChosen = true; // lock direction input
             break;
         case "w" :
             if (direction % 2 == 1){
@@ -117,57 +144,60 @@ function listeningMed(e) {
 
 // helpers
 
+// This game moves the snake by adding a new segment on to 
+// the front of the snake and removing the one at the end. 
+// To make it easy, the tail of the snake is actually the
+// first element so that it can be popped easily and new
+// segments can be easily appended to the end (head). 
 function moveMed(){
     let newSeg = [];
     let last = 0;
     if (eaten == 0) {
+        // An element will be getting popped, so factor that in
         last = snake.length - 2;
     } else {
+        // after you've eaten, no elements are getting popped
         last = snake.length - 1;
     }
+    
+    // pop the tail
+    if (eaten == 0){
+        tail = snake.shift();
+        boxes[tail[0]][tail[1]] = 0;
+    }
+    
+    
+    // add new segment in correct location
     switch (direction) {
         case 0 :
-            if (eaten == 0){
-                tail = snake.shift();
-                boxes[tail[0]][tail[1]] = 0;
-            }
-            
+            // construct segment array and append to 2d snake array
+            // remember, the last array element is actually the snake's face
             newSeg.push(snake[last][0] + 1);
             newSeg.push(snake[last][1]);
             snake.push(newSeg)
-            boxes[newSeg[0]][newSeg[1]] = 1;
+            boxes[newSeg[0]][newSeg[1]] = 1; // set boxes array with new segment
             break;
         case 1 :
-            if (eaten == 0){
-                tail = snake.shift();
-                boxes[tail[0]][tail[1]] = 0;
-            }
             newSeg.push(snake[last][0]);
             newSeg.push(snake[last][1] + 1);
             snake.push(newSeg)
             boxes[newSeg[0]][newSeg[1]] = 1;
             break;
         case 2 :
-            if (eaten == 0){
-                tail = snake.shift();
-                boxes[tail[0]][tail[1]] = 0;
-            }
             newSeg.push(snake[last][0] - 1);
             newSeg.push(snake[last][1]);
             snake.push(newSeg)
             boxes[newSeg[0]][newSeg[1]] = 1;
             break;
         case 3 :
-            if (eaten == 0){
-                tail = snake.shift();
-                boxes[tail[0]][tail[1]] = 0;
-            }
             newSeg.push(snake[last][0]);
             newSeg.push(snake[last][1] - 1);
             snake.push(newSeg)
             boxes[newSeg[0]][newSeg[1]] = 1;
             break;
     }
+    
+    // gotta stop growing sometime
     if (eaten > 0) {
         --eaten;
     }
@@ -180,8 +210,9 @@ function collisionCheckMed() {
 
     console.log(tickLength);
 
+    // calculate next snake position based on current head
+    // and direction
     let upcomingXval = snake[snake.length - 1][0]
-
     let upcomingYval = snake[snake.length - 1][1]
     switch (direction) {
         case 0:
@@ -198,6 +229,7 @@ function collisionCheckMed() {
             break;
     }
 
+    // check for walls
     if (upcomingXval < 0 || upcomingXval > 34
         || upcomingYval < 0 || upcomingYval > 20) {
             console.log("bonk");
@@ -205,22 +237,28 @@ function collisionCheckMed() {
         }
 
 
+    // check boxes array for segments or apples
     switch (boxes[upcomingXval][upcomingYval]){
+        // nothing
         case 0:
             break;
+        // snake segment, lose game
         case 1:
             console.log("bonk");
             dieMed();
             break;
+        // apple eaten 
         case 2:
-            eaten = 5;
-            tickLength -= 2;
+            eaten = 5; // pause segment deletion for five updates
+            tickLength -= 2; // snake goes faster
             score += 100;
             break;
     }
 
 }
 
+
+// draw all snake segments, apple, droppings
 function drawAllMed() {
     if (!playing) {
         return;
@@ -257,17 +295,25 @@ function drawAppleMed(x, y){
     context.restore();
 }
 
+// randomly decide next position of apples
 function placeAppleMed(){
+    // only needs to happen after apple is eaten
     if (eaten < 4) {
         return;
     }
+    
+    // calculate where apple can go
     let options = appleOptionsMed();
+    
+    // randomly pick spot for apple
     let index = Math.floor(options.length * Math.random());
     apple = options[index];
     boxes[apple[0]][apple[1]] = 2;
     
 }
 
+// apple cannot be placed over a snake segment, so
+// this function scrubs the boxes array for possible spots
 function appleOptionsMed() {
     options = [];
     for (let i = 0; i < 35; ++i) {
@@ -280,7 +326,7 @@ function appleOptionsMed() {
     return options;
 }
 
-
+// initialize boxes array at beginning of game
 function constructBoxesMed(){
     for (let i = 0; i < 35; ++i){
         temp = [];
@@ -289,10 +335,14 @@ function constructBoxesMed(){
         }
         boxes.push(temp);
     }
+    
+    // beginning snake segments
     boxes[1][1] = 1;
     boxes[2][1] = 1;
     boxes[3][1] = 1;
     boxes[4][1] = 1;
+    
+    // beginning apple position
     boxes[5][5] = 2;
 
 }
@@ -303,6 +353,7 @@ function dieMed(){
     peelMed();
 }
 
+// death "animation"
 function peelMed() {
     if (performance.now() - then < 50) {
         
@@ -326,6 +377,7 @@ function peelMed() {
     window.requestAnimationFrame(peel);
 }
 
+// reset values so that game will function if a user wants to play again
 function cleanupMed() {
     canvas.style.backgroundColor = "black";
     context.clearRect(0, 0, canvas.width, canvas.height);
