@@ -1,6 +1,8 @@
 // this is hard mode. The snake will leave droppings in the place where
 // it ate an apple. 
 
+// explanation of the below constants is in the "easy.js" file 
+
 // let canvas = document.getElementById("canvas");
 // let context = canvas.getContext("2d");
 // let playing = false;
@@ -16,22 +18,27 @@
 // let easy = document.getElementById("easyButton");
 // let medium = document.getElementById("medButton");
 // let hard = document.getElementById("hardButton");
-// let brutal = document.getElementById("brutalButton");
-// at 20 px, there are 21 blocks to the height and 35 blocks to the width
 
-// starter
+// blocks at 20 px, there are 21 blocks to the height and 35 blocks to the width
+
+
+// starter - click listener for hard mode
 hard.onclick = function startHard() {
     if (playing){
         return;
     }
-    tickLength = 120;
+    tickLength = 120; 
+    
+    // hide buttons during game
     easy.style.display = "none";
     medium.style.display = "none";
     hard.style.display = "none";
+    
+    // initialize game
     constructBoxesHard();
     context.clearRect(0, 0, canvas.width, canvas.height);
     playing = true;
-    console.log("you picked hard");
+    console.log("you picked hard"); // debug text
     then = performance.now();
     loopHard();
 }
@@ -40,24 +47,38 @@ hard.onclick = function startHard() {
 // vitals
 
 function loopHard(){
+    
+    // only update game (snake position, etc) after a certain length of time
+    // dictated by the current tick length
     let now = performance.now();
     if (now - then > tickLength){
         then = now;
         updateHard();
     }
+    
+    // A lot of these exist to kill functions that may still be looping/running
+    // after the game ends. Keeps functions from throwing errors when they
+    // try to edit data that no longer exists
     if (!playing) {
         return;
     }
+    
+    // repeat
     window.requestAnimationFrame(loopHard);
 }
 
+
 function updateHard(){
     dirChosen = false;
+    
+    // check if the snake is colliding with anything, then move it
     collisionCheckHard();
     moveHard();
     if (!playing) {
         return;
     }
+    
+    // clear canvas and repaint
     context.clearRect(0, 0, canvas.width, canvas.height)
     placeAppleHard();
     drawAllHard();
@@ -68,19 +89,28 @@ function updateHard(){
 window.addEventListener("keypress", listening);
 
 function listeningHard(e) {
-    --score;
-    console.log("banana");
+    --score; // score decreases for every turn, disincentivizes excessive turns
+    console.log("banana"); // debug text
+    
+    // locking the direction after first (valid) input makes input seem more
+    // responsive. If a u-turn is too quick, the second move (currently
+    // invalid) would otherwise overwrite the first and also just not happen. This
+    // results in the game "eating" both inputs. Locking on that first
+    // valid input prevents this. The second input does get eaten, but
+    // the snake can't even turn that way yet. 
     if (!playing || dirChosen) {
         return;
     }
+    
+    // switch to read directional input
     switch (e.key){
         case "a" :
-            if (direction % 2 == 0){
+            if (direction % 2 == 0){ // invalid if straight or backwards
                 break;
             } else {
                 direction = 2;
             }
-            dirChosen = true;
+            dirChosen = true; // lock input
             break;
         case "w" :
             if (direction % 2 == 1){
@@ -106,7 +136,7 @@ function listeningHard(e) {
             }
             dirChosen = true;
         default:
-            console.log(e.key);
+            console.log(e.key); // debug output
     }
 
 }
@@ -117,30 +147,44 @@ function listeningHard(e) {
 
 // helpers
 
+// This game moves the snake by adding a new segment on to 
+// the front of the snake and removing the one at the end. 
+// To make it easy, the tail of the snake is actually the
+// first element so that it can be popped easily and new
+// segments can be easily appended to the end (head). 
 function moveHard(){
     let newSeg = [];
     let last = 0;
     if (eaten == 0) {
-        last = snake.length - 2;
+        // An element will be getting popped, so factor that in
+        last = snake.length - 2; 
     } else {
-        last = snake.length - 1;
+        // after you've eaten, no elements are getting popped
+        last = snake.length - 1; 
     }
 
     if (eaten == 0){
+        // pop the tail
         tail = snake.shift();
+        
+        // if it's a dropping, it needs to stick around
         if (boxes[tail[0]][tail[1]] != 3) {
             boxes[tail[0]][tail[1]] = 0;
         }
         
     }
 
+    // add new segment in the correct place
     switch (direction) {
         case 0 :
 
-            
+            // construct segment array and append to 2d snake array
+            // remember, the last array element is actually the snake's face
             newSeg.push(snake[last][0] + 1);
             newSeg.push(snake[last][1]);
             snake.push(newSeg)
+            
+            // make the box element a snake segment if it's not a dropping
             if (boxes[newSeg[0]][newSeg[1]] != 3) {
                 boxes[newSeg[0]][newSeg[1]] = 1;
             }
@@ -173,6 +217,8 @@ function moveHard(){
             }
             break;
     }
+    
+    // decrement eat value
     if (eaten > 0) {
         --eaten;
     }
@@ -184,8 +230,9 @@ function collisionCheckHard() {
     }
     console.log(tickLength);
 
+    // calculate next snake position based on current head
+    // and direction
     let upcomingXval = snake[snake.length - 1][0]
-
     let upcomingYval = snake[snake.length - 1][1]
     switch (direction) {
         case 0:
@@ -202,6 +249,7 @@ function collisionCheckHard() {
             break;
     }
 
+    // check walls
     if (upcomingXval < 0 || upcomingXval > 34
         || upcomingYval < 0 || upcomingYval > 20) {
             console.log("bonk");
@@ -209,19 +257,26 @@ function collisionCheckHard() {
         }
 
 
+    // check boxes array for snake segment, droppings,
+    // or apples
     switch (boxes[upcomingXval][upcomingYval]){
+            
+        // nothin
         case 0:
             break;
+        // snake segment - rest in pieces
         case 1:
             console.log("bonk");
             dieHard();
             break;
+        // apple consumption occurs. Delicious. 
         case 2:
             eaten = 5;
             tickLength -= 2;
             score += 100;
             boxes[upcomingXval][upcomingYval] = 3;
             break;
+        // dropping - also rest in pieces
         case 3:
             dieHard();
             break;
@@ -229,6 +284,7 @@ function collisionCheckHard() {
 
 }
 
+// draw all snake segments, apple, droppings
 function drawAllHard() {
     if (!playing) {
         return;
@@ -277,17 +333,25 @@ function drawPingHard(x, y) {
     context.restore();
 }
 
+// randomly decide next position of apples
 function placeAppleHard(){
+    // only needs to happen after apple is eaten
     if (eaten < 4) {
         return;
     }
+    
+    // calculate where apple can go
     let options = appleOptionsHard();
+    
+    // randomly pick spot for apple
     let index = Math.floor(options.length * Math.random());
     apple = options[index];
     boxes[apple[0]][apple[1]] = 2;
     
 }
 
+// apple cannot be placed over a snake segment or dropping, so
+// this function scrubs the boxes array for possible spots
 function appleOptionsHard() {
     options = [];
     for (let i = 0; i < 35; ++i) {
@@ -301,6 +365,7 @@ function appleOptionsHard() {
 }
 
 
+// initializer for boxes array
 function constructBoxesHard(){
     for (let i = 0; i < 35; ++i){
         temp = [];
@@ -309,12 +374,17 @@ function constructBoxesHard(){
         }
         boxes.push(temp);
     }
+    
+    // snek
     boxes[1][1] = 1;
     boxes[2][1] = 1;
     boxes[3][1] = 1;
     boxes[4][1] = 1;
+    
+    // aple
     boxes[5][5] = 2;
-
+    
+    // everything else remains 0 for empty space
 }
 
 function dieHard(){
@@ -323,6 +393,7 @@ function dieHard(){
     peelHard();
 }
 
+// cosmetics
 function peelHard() {
     if (performance.now() - then < 50) {
         
@@ -346,6 +417,7 @@ function peelHard() {
     window.requestAnimationFrame(peel);
 }
 
+// reset values so that game will function if a user wants to play again
 function cleanupHard() {
     canvas.style.backgroundColor = "black";
     context.fillStyle = "white";
@@ -358,6 +430,8 @@ function cleanupHard() {
     direction = 0;
     then = 0;
     boxes = [];
+    
+    // reveal buttons to the player once again
     easy.style.display = "inline";
     medium.style.display = "inline";
     hard.style.display = "inline";
